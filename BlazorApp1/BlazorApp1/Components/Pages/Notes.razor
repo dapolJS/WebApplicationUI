@@ -8,10 +8,7 @@
     Login
     who created note
     create archive for done notes
-    status change from true false to DONE TO-DO
-    refactor from notebook to category
     create new column and in endpoint Type : TO DO or TO BUY
-    create categories
     filter by Categories and by Type
 *@
 <PageTitle>Notes</PageTitle>
@@ -29,8 +26,7 @@
 
 <!-- New Note Form -->
 <div style="margin-bottom: 1em;">
-    <input placeholder="Title..." @bind="newNote.Title"/>
-    <input placeholder="Description..." @bind="newNote.Description"/>
+    <input placeholder="Content..." @bind="newNote.Content"/>
     <button @onclick="CreateNewNote">Create</button>
 </div>
 
@@ -46,33 +42,33 @@ else
     <table class="table">
         <thead>
         <tr>
-            <th>Name</th>
-            <th aria-label="Description of note">Description</th>
+            <th>Note Content</th>
             <th aria-label="Status of note">Status</th>
-            <th aria-label="Name of notebook">Notebook Name</th>
             <th>
-    <span @onclick="ToggleSortByDate" style="cursor:pointer; user-select:none;">
-        Date
-        @(_isDateDescending ? " 🔽" : " 🔼")
-    </span>
+                <span @onclick="ToggleSortByDate">
+                    Date
+                    @(_isDateDescending ? " 🔽" : " 🔼")
+                </span>
             </th>
+            <th aria-label="Category">Category</th>
         </tr>
         </thead>
         <tbody>
         @foreach (var note in _notes)
         {
             <tr class="@(_deletingNoteIds.Contains(note.Id) ? "fade-out" : (_newlyCreatedNoteIds.Contains(note.Id) ? "fade-in" : ""))">
-                <td>@note.Title</td>
-                <td>@note.Description</td>
-                <td>@note.Done</td>
-                <td>@note.Notebook?.Title</td>
+                <td>@note.Content</td>
+                <td>@(note.Done == true ? "Done" : "Todo")</td>
                 <td>@note.Date.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>...</td>
                 <td>
-                    <button @onclick="() => MarkAsDone(note.Id)" style="cursor:pointer; user-select:none;">Done
+                    <button @onclick="() => MarkAsDone(note.Id)">
+                        Done
                     </button>
                 </td>
                 <td>
-                    <button @onclick="() => DeleteNote(note.Id)" style="cursor:pointer; user-select:none;">Delete
+                    <button @onclick="() => DeleteNote(note.Id)">
+                        Delete
                     </button>
                 </td>
             </tr>
@@ -94,7 +90,6 @@ else
 
     private Note newNote = new Note
     {
-        NotebookId = null,
         Done = false
     };
 
@@ -104,7 +99,7 @@ else
 
         try
         {
-            _notes = (await Http.GetFromJsonAsync<Note[]>("api/GetNotes/0/None"))?.ToList();
+            _notes = (await Http.GetFromJsonAsync<Note[]>("api/GetNotes"))?.ToList();
             SortNotesByDate();
         }
         catch (Exception ex)
@@ -116,11 +111,11 @@ else
 
     private async Task CreateNewNote()
     {
-        if (string.IsNullOrEmpty(newNote.Title) ||
-            string.IsNullOrEmpty(newNote.Description)
+        if (
+            string.IsNullOrEmpty(newNote.Content)
            )
         {
-            _errorMessage = "Please enter both a title and a description.";
+            _errorMessage = "Please enter text in the field!";
             return;
         }
 
@@ -145,7 +140,7 @@ else
                 _newlyCreatedNoteIds.Remove(createdNote.Id);
                 StateHasChanged();
                 
-                newNote = new Note { NotebookId = null, Done = false };
+                newNote = new Note { Done = false };
 
             }
         }
